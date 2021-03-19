@@ -24,9 +24,17 @@ func parseFile(path string) (*FileDeclaration, error) {
 				if err != nil {
 					return nil, err
 				}
-
 				fileDecl.AddImports(imports)
-				// todo: Var
+
+			case token.VAR:
+				variants, err := parseVar(decl)
+				if err != nil {
+					return nil, err
+				}
+
+				if len(variants) > 0 {
+					fileDecl.AddVariants(variants)
+				}
 			}
 		}
 	}

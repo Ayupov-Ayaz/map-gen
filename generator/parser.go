@@ -2,11 +2,12 @@ package generator
 
 import (
 	"errors"
+	"fmt"
 	"go/ast"
 	"strings"
 )
 
-const mapGenCommentTag = "//map_gen"
+const mapGenCommentTag = "//map_gen:"
 
 func parseImports(d *ast.GenDecl) ([]string, error) {
 	imports := make([]string, len(d.Specs))
@@ -22,55 +23,88 @@ func parseImports(d *ast.GenDecl) ([]string, error) {
 	return imports, nil
 }
 
-func parseMapGenComments(comments []*ast.Comment) bool {
-	for _, c := range comments {
-		if strings.HasPrefix(c.Text, mapGenCommentTag) {
+func getName(commentText string) (string, bool) {
+	if strings.HasPrefix(commentText, mapGenCommentTag) {
+		elements := strings.Split(strings.Replace(commentText, mapGenCommentTag, "", 1), ";")
 
+		for _, e := range elements {
+			if strings.HasPrefix(e, "name=") {
+				return strings.Replace(e, "name=", "", 1), true
+			}
 		}
 	}
 
-	return false
+	return "", false
 }
 
-func getCommentFromSingleVar(decl *ast.GenDecl) []*ast.Comment {
-	if decl.Doc != nil && len(decl.Doc.List) > 0 {
-		return decl.Doc.List
-	}
-
-	return nil
+func isSingleVariable(decl *ast.GenDecl) bool {
+	return decl.Doc != nil && len(decl.Doc.List) > 0
 }
 
-func getCommentFromMultiVar(decl *ast.GenDecl) []*ast.Comment {
-	if len(decl.Specs) == 0 {
-		return nil
+func isMultiVariant(decl *ast.GenDecl) bool {
+	return !isSingleVariable(decl) && len(decl.Specs) > 0
+}
+
+func getSingleVarComment(decl *ast.GenDecl) (Variant, bool) {
+	if decl.Doc != nil {
+		for _, c := range decl.Doc.List {
+			name, ok := getName(c.Text)
+			if ok {
+				return NewVariant(name), true
+			}
+		}
 	}
 
-	var comments []*ast.Comment
+	return Variant{}, false
+}
+
+func getMultiVarComment(decl *ast.GenDecl) []Variant {
+	var variants []Variant
 
 	for _, s := range decl.Specs {
 		vs, ok := s.(*ast.ValueSpec)
-		if !ok || vs.Doc == nil || vs.Doc.List == nil {
+
+		list := vs.Doc.List
+		count := len(list)
+
+		if !ok || vs.Doc == nil || count == 0 {
 			continue
 		}
 
-		comments = append(comments, vs.Doc.List...)
+		if variants == nil {
+			variants = make([]Variant, 0, count)
+		}
+
+		for _, c := range list {
+			name, ok := getName(c.Text)
+			if ok {
+				variants = append(variants, NewVariant(name))
+			}
+		}
 	}
 
-	return comments
+	return variants
 }
 
-func getComments(decl *ast.GenDecl) []*ast.Comment {
-	comments := getCommentFromSingleVar(decl)
-	if comments != nil {
-		return comments
+func parseVar(decl *ast.GenDecl) ([]Variant, error) {
+	var variants []Variant
+
+	if isSingleVariable(decl) {
+		variant, ok := getSingleVarComment(decl)
+		if ok {
+			variants = append(variants, variant)
+		}
+
+	} else if isMultiVariant(decl) {
+		mVariants := getMultiVarComment(decl)
+		if len(mVariants) > 0 {
+			variants = append(variants, mVariants...)
+		}
 	}
 
-	return getCommentFromMultiVar(decl)
-}
-
-func parseVars(decl *ast.GenDecl) ([]Variant, error) {
-	comments := getComments(decl)
-	parseMapGenComments(comments)
+	for _, c := range variants {
+		fmt.Println(c.Name)
+	}
 
 	return nil, nil
 }
