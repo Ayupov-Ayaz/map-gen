@@ -41,70 +41,46 @@ func isSingleVariable(decl *ast.GenDecl) bool {
 	return decl.Doc != nil && len(decl.Doc.List) > 0
 }
 
-func isMultiVariant(decl *ast.GenDecl) bool {
-	return !isSingleVariable(decl) && len(decl.Specs) > 0
-}
+func parseSingleVariantData(decl *ast.GenDecl) (*Variant, error) {
+	var (
+		name string
+		ok   bool
+	)
 
-func getSingleVarComment(decl *ast.GenDecl) (Variant, bool) {
 	if decl.Doc != nil {
 		for _, c := range decl.Doc.List {
-			name, ok := getName(c.Text)
+			name, ok = getName(c.Text)
 			if ok {
-				return NewVariant(name), true
+				break
 			}
 		}
 	}
 
-	return Variant{}, false
-}
-
-func getMultiVarComment(decl *ast.GenDecl) []Variant {
-	var variants []Variant
-
-	for _, s := range decl.Specs {
-		vs, ok := s.(*ast.ValueSpec)
-
-		list := vs.Doc.List
-		count := len(list)
-
-		if !ok || vs.Doc == nil || count == 0 {
-			continue
-		}
-
-		if variants == nil {
-			variants = make([]Variant, 0, count)
-		}
-
-		for _, c := range list {
-			name, ok := getName(c.Text)
-			if ok {
-				variants = append(variants, NewVariant(name))
-			}
-		}
+	if !ok {
+		return nil, nil
 	}
 
-	return variants
+	mapData, err := ParseMap(decl.Specs)
+	if err != nil {
+		return nil, fmt.Errorf("ParseMap: %w", err)
+	}
+
+	return NewVariant(name, mapData), nil
 }
 
 func parseVar(decl *ast.GenDecl) ([]Variant, error) {
 	var variants []Variant
 
 	if isSingleVariable(decl) {
-		variant, ok := getSingleVarComment(decl)
-		if ok {
-			variants = append(variants, variant)
+		variant, err := parseSingleVariantData(decl)
+		if err != nil {
+			return nil, fmt.Errorf("parseSingleVariantData: %w", err)
 		}
 
-	} else if isMultiVariant(decl) {
-		mVariants := getMultiVarComment(decl)
-		if len(mVariants) > 0 {
-			variants = append(variants, mVariants...)
+		if variant != nil {
+			variants = append(variants, *variant)
 		}
 	}
 
-	for _, c := range variants {
-		fmt.Println(c.Name)
-	}
-
-	return nil, nil
+	return variants, nil
 }

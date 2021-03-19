@@ -43,12 +43,15 @@ func parseFile(path string) (*FileDeclaration, error) {
 }
 
 func Run(path string) error {
-	fileDeclaration, err := parseFile(path)
+	fileDecl, err := parseFile(path)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(fileDeclaration)
-
+	fmt.Println(fileDecl.Imports)
+	for _, v := range fileDecl.Vars {
+		fmt.Println(v.Name)
+		fmt.Println(v.Maps.values)
+	}
 	return nil
 }
