@@ -20,6 +20,36 @@ func CastSliceBasicList(expr []ast.Expr) ([]*ast.BasicLit, error) {
 	return bls, nil
 }
 
+func parseKeyFromConstant(kv *ast.KeyValueExpr) (string, error) {
+	ident, ok := kv.Key.(*ast.Ident)
+	if ok {
+		if ident.Obj != nil {
+			if ident.Obj.Decl != nil {
+				vs, ok := ident.Obj.Decl.(*ast.ValueSpec)
+				if ok {
+					for _, value := range vs.Values {
+						v, ok := value.(*ast.BasicLit)
+						if ok {
+							return v.Value, nil
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return "", errors.New("parse map key failed")
+}
+
+func parseKey(kv *ast.KeyValueExpr) (string, error) {
+	key, ok := kv.Key.(*ast.BasicLit)
+	if !ok {
+		return parseKeyFromConstant(kv)
+	}
+
+	return key.Value, nil
+}
+
 func ParseMapValues(cl *ast.CompositeLit) (map[string][]string, error) {
 	results := make(map[string][]string, len(cl.Elts))
 
@@ -27,11 +57,6 @@ func ParseMapValues(cl *ast.CompositeLit) (map[string][]string, error) {
 		kvExpr, ok := v.(*ast.KeyValueExpr)
 		if !ok {
 			return nil, errors.New("cast to ast.KeyValueExpr failed")
-		}
-
-		key, ok := kvExpr.Key.(*ast.BasicLit)
-		if !ok {
-			return nil, errors.New("cast to ast.BasicList failed")
 		}
 
 		clValues, ok := kvExpr.Value.(*ast.CompositeLit)
@@ -49,7 +74,12 @@ func ParseMapValues(cl *ast.CompositeLit) (map[string][]string, error) {
 			vData[i] = values[i].Value
 		}
 
-		results[key.Value] = vData
+		key, err := parseKey(kvExpr)
+		if err != nil {
+			return nil, fmt.Errorf("parseKey failed: %w", err)
+		}
+
+		results[key] = vData
 	}
 
 	return results, nil
