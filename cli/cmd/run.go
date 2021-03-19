@@ -2,16 +2,17 @@ package cmd
 
 import (
 	"errors"
+
 	"github.com/releaseband/map-gen/generator"
 	"github.com/spf13/cobra"
 )
 
 var (
 	runCmd = &cobra.Command{
-	Use: "run",
-	Short: "generate map to switch",
-	RunE: run,
-}
+		Use:   "run",
+		Short: "generate map to switch",
+		RunE:  run,
+	}
 	Path string
 )
 
