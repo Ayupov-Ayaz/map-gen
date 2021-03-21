@@ -7,6 +7,8 @@ import (
 	"go/parser"
 	"go/token"
 	"strings"
+
+	"github.com/releaseband/map-gen/generator/parser/models"
 )
 
 const mapGenCommentTag = "//map_gen:"
@@ -43,7 +45,7 @@ func isSingleVariable(decl *ast.GenDecl) bool {
 	return decl.Doc != nil && len(decl.Doc.List) > 0
 }
 
-func parseSingleVariantData(decl *ast.GenDecl) (*Variant, error) {
+func parseSingleVariantData(decl *ast.GenDecl) (*models.Variant, error) {
 	var (
 		name string
 		ok   bool
@@ -67,11 +69,11 @@ func parseSingleVariantData(decl *ast.GenDecl) (*Variant, error) {
 		return nil, fmt.Errorf("searchAndParseMap: %w", err)
 	}
 
-	return NewVariant(name, mapData), nil
+	return models.NewVariant(name, mapData), nil
 }
 
-func parseVar(decl *ast.GenDecl) ([]Variant, error) {
-	var variants []Variant
+func parseVar(decl *ast.GenDecl) ([]models.Variant, error) {
+	var variants []models.Variant
 
 	if isSingleVariable(decl) {
 		variant, err := parseSingleVariantData(decl)
@@ -87,13 +89,13 @@ func parseVar(decl *ast.GenDecl) ([]Variant, error) {
 	return variants, nil
 }
 
-func ParseFile(path string) (*FileDeclaration, error) {
+func ParseFile(path string) (*models.FileDeclaration, error) {
 	set, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ParseComments)
 	if err != nil {
 		return nil, fmt.Errorf("parser.ParseFile: %w", err)
 	}
 
-	fileDecl := NewFileDeclaration(set.Name.Name)
+	fileDecl := models.NewFileDeclaration(set.Name.Name)
 
 	for _, d := range set.Decls {
 		decl, ok := d.(*ast.GenDecl)

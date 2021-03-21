@@ -1,7 +1,7 @@
 package generator
 
 import (
-	"fmt"
+	"github.com/releaseband/map-gen/generator/recorder"
 
 	"github.com/releaseband/map-gen/generator/parser"
 )
@@ -12,11 +12,9 @@ func Run(path string) error {
 		return err
 	}
 
-	fmt.Println(fileDecl.PackageName)
-
-	for _, v := range fileDecl.Vars {
-		fmt.Println(v.Name)
-		fmt.Println(v.MapData)
+	if err := recorder.RecordMap(fileDecl); err != nil {
+		return err
 	}
+
 	return nil
 }
