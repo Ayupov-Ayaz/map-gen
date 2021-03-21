@@ -1,4 +1,4 @@
-package generator
+package parser
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"go/ast"
 )
 
-func CastSliceBasicList(expr []ast.Expr) ([]*ast.BasicLit, error) {
+func castSliceBasicList(expr []ast.Expr) ([]*ast.BasicLit, error) {
 	bls := make([]*ast.BasicLit, len(expr))
 	for i, e := range expr {
 		bl, ok := e.(*ast.BasicLit)
@@ -51,7 +51,7 @@ func parseKey(kv *ast.KeyValueExpr) (string, error) {
 }
 
 func parseValues(expr []ast.Expr) ([]string, error) {
-	values, err := CastSliceBasicList(expr)
+	values, err := castSliceBasicList(expr)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func parseValues(expr []ast.Expr) ([]string, error) {
 	return vData, nil
 }
 
-func parseMapValues(cl *ast.CompositeLit) (map[string][]string, error) {
+func parseMapData(cl *ast.CompositeLit) (map[string][]string, error) {
 	results := make(map[string][]string, len(cl.Elts))
 
 	for _, v := range cl.Elts {
@@ -94,26 +94,25 @@ func parseMapValues(cl *ast.CompositeLit) (map[string][]string, error) {
 	return results, nil
 }
 
-func parseMap(vs *ast.ValueSpec) (*Map, error) {
+func parseMap(vs *ast.ValueSpec) (map[string][]string, error) {
 	for _, v := range vs.Values {
 		lit, ok := v.(*ast.CompositeLit)
 		if !ok {
 			continue
 		}
 
-		mapValues, err := parseMapValues(lit)
+		mapData, err := parseMapData(lit)
 		if err != nil {
-			return nil, fmt.Errorf("parseMapValues: %w", err)
+			return nil, fmt.Errorf("parseMapData: %w", err)
 		}
 
-		return NewMap(mapValues), nil
+		return mapData, nil
 	}
 
 	return nil, errors.New("map not found")
 }
 
-func ParseMap(specs []ast.Spec) (*Map, error) {
-
+func searchAndParseMap(specs []ast.Spec) (map[string][]string, error) {
 	for _, spec := range specs {
 		vs, ok := spec.(*ast.ValueSpec)
 		if !ok {

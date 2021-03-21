@@ -1,9 +1,11 @@
-package generator
+package parser
 
 import (
 	"errors"
 	"fmt"
 	"go/ast"
+	"go/parser"
+	"go/token"
 	"strings"
 )
 
@@ -60,9 +62,9 @@ func parseSingleVariantData(decl *ast.GenDecl) (*Variant, error) {
 		return nil, nil
 	}
 
-	mapData, err := ParseMap(decl.Specs)
+	mapData, err := searchAndParseMap(decl.Specs)
 	if err != nil {
-		return nil, fmt.Errorf("ParseMap: %w", err)
+		return nil, fmt.Errorf("searchAndParseMap: %w", err)
 	}
 
 	return NewVariant(name, mapData), nil
@@ -83,4 +85,32 @@ func parseVar(decl *ast.GenDecl) ([]Variant, error) {
 	}
 
 	return variants, nil
+}
+
+func ParseFile(path string) (*FileDeclaration, error) {
+	set, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ParseComments)
+	if err != nil {
+		return nil, fmt.Errorf("parser.ParseFile: %w", err)
+	}
+
+	fileDecl := &FileDeclaration{}
+
+	for _, d := range set.Decls {
+		decl, ok := d.(*ast.GenDecl)
+		if ok {
+			switch decl.Tok {
+			case token.VAR:
+				variants, err := parseVar(decl)
+				if err != nil {
+					return nil, err
+				}
+
+				if len(variants) > 0 {
+					fileDecl.AddVariants(variants)
+				}
+			}
+		}
+	}
+
+	return fileDecl, nil
 }
