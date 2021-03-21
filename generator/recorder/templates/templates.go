@@ -1,18 +1,15 @@
 package templates
 
 const Template = `//CODE GENERATED AUTOMATICALLY. DO NOT EDIT.
-package {{.Package}}
+package {{.PackageName}}
 
-import ({{range $k, $val := $.Imports}}
-{{$val}}{{end}}	
-)
-{{range $i, $result := $.R}}
-func {{$result.FuncName}} (s {{$result.KeyType}}, count {{$result.CountType}}) {{$result.ValType}} {
+{{range $i, $result := $.Vars}}
+func {{$result.Name}} (s uint32, count uint8) uint16 {
 	switch s {
-		{{range $key, $val := $result.Map.Data }}
+		{{range $key, $val := $result.MapData }}
 			case {{$key}}:
 				switch count { {{range $j, $v := $val}}
-					case {{inc $j}}: return {{$v}}{{end}}
+					case {{increment $j}}: return {{$v}}{{end}}
 				}{{end}}}
 	return 0
 }

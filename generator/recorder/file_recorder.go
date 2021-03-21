@@ -5,6 +5,9 @@ import (
 	"os"
 	"strings"
 	"text/template"
+
+	"github.com/releaseband/map-gen/generator/parser/models"
+	"github.com/releaseband/map-gen/generator/recorder/templates"
 )
 
 func createFile(filename string) (*os.File, error) {
@@ -30,7 +33,7 @@ func getGenFilename(filename string) string {
 	return n + ".gen.go"
 }
 
-func RecordToFile(filename string, t *template.Template, i interface{}) error {
+func recordToFile(filename string, t *template.Template, i interface{}) error {
 	gFileName := getGenFilename(filename)
 
 	if fileExist(gFileName) {
@@ -48,6 +51,23 @@ func RecordToFile(filename string, t *template.Template, i interface{}) error {
 
 	if err := t.Execute(f, i); err != nil {
 		return fmt.Errorf("exucute template failed: %w", err)
+	}
+
+	return nil
+}
+
+func makeTemplate(tempData string) *template.Template {
+	return template.Must(template.New("map => switch").
+		Funcs(template.FuncMap{
+			"increment": func(i int) int {
+				return i + 1
+			},
+		}).Parse(tempData))
+}
+
+func RecordMap(fd *models.FileDeclaration) error {
+	if err := recordToFile(fd.PackageName, makeTemplate(templates.Template), fd); err != nil {
+		return fmt.Errorf("recordToFile: %w", err)
 	}
 
 	return nil

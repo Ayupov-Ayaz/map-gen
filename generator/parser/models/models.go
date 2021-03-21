@@ -1,4 +1,4 @@
-package parser
+package models
 
 type Variant struct {
 	Name    string
