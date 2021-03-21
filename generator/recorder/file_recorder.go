@@ -10,6 +10,10 @@ import (
 	"github.com/releaseband/map-gen/generator/recorder/templates"
 )
 
+const (
+	postfix = ".gen.go"
+)
+
 func createFile(filename string) (*os.File, error) {
 	f, err := os.Create(filename)
 	if err != nil {
@@ -29,8 +33,7 @@ func removeFile(filename string) error {
 }
 
 func getGenFilename(filename string) string {
-	n := strings.Replace(filename, ".go", "", 1)
-	return n + ".gen.go"
+	return strings.Replace(filename, ".go", "", 1) + postfix
 }
 
 func recordToFile(filename string, t *template.Template, i interface{}) error {
