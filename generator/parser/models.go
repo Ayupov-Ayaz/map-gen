@@ -10,7 +10,14 @@ func NewVariant(name string, mapData map[string][]string) *Variant {
 }
 
 type FileDeclaration struct {
-	Vars []Variant
+	PackageName string
+	Vars        []Variant
+}
+
+func NewFileDeclaration(packageName string) *FileDeclaration {
+	return &FileDeclaration{
+		PackageName: packageName,
+	}
 }
 
 func (d *FileDeclaration) AddVariants(variants []Variant) {

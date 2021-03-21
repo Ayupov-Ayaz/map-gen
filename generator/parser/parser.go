@@ -93,7 +93,7 @@ func ParseFile(path string) (*FileDeclaration, error) {
 		return nil, fmt.Errorf("parser.ParseFile: %w", err)
 	}
 
-	fileDecl := &FileDeclaration{}
+	fileDecl := NewFileDeclaration(set.Name.Name)
 
 	for _, d := range set.Decls {
 		decl, ok := d.(*ast.GenDecl)

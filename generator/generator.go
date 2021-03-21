@@ -12,6 +12,8 @@ func Run(path string) error {
 		return err
 	}
 
+	fmt.Println(fileDecl.PackageName)
+
 	for _, v := range fileDecl.Vars {
 		fmt.Println(v.Name)
 		fmt.Println(v.MapData)
